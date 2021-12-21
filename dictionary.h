@@ -9,7 +9,7 @@ typedef struct {
 typedef struct {
 	int number_of_elements;
 	int max;
-	struct Element* list;
+	Element* list;
 }Dictionary;
 
 Element* allocate();
