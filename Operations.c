@@ -1,13 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "Header.h"
+#include "header.h"
+#include "dictionary.h"
 
 struct Memory {
 	int Memory[1024];
 } memory;
 
 struct Processor {
+	Dictionary* executable;
 	int Registers[16];
 	int IO_Registers[23];
 	int PC;
@@ -16,7 +18,7 @@ struct Processor {
 
 
 
-void add(int rd_index,int rs_index, int rt_index,int rm_index,struct Processor SIMP)
+void add(int rd_index, int rs_index, int rt_index, int rm_index, struct Processor SIMP)
 {
 	SIMP.Registers[rd_index] = SIMP.Registers[rs_index] + SIMP.Registers[rt_index] + SIMP.Registers[rm_index];
 }
@@ -31,7 +33,7 @@ void mac(int rd_index, int rs_index, int rt_index, int rm_index, struct Processo
 	SIMP.Registers[rd_index] = SIMP.Registers[rs_index] * SIMP.Registers[rt_index] + SIMP.Registers[rm_index];
 }
 
-void and(int rd_index, int rs_index, int rt_index, int rm_index, struct Processor SIMP)
+voidand (int rd_index, int rs_index, int rt_index, int rm_index, struct Processor SIMP)
 {
 	SIMP.Registers[rd_index] = (SIMP.Registers[rs_index] & SIMP.Registers[rt_index]) & SIMP.Registers[rm_index];
 }
@@ -41,7 +43,7 @@ void or (int rd_index, int rs_index, int rt_index, int rm_index, struct Processo
 	SIMP.Registers[rd_index] = (SIMP.Registers[rs_index] | SIMP.Registers[rt_index]) | SIMP.Registers[rm_index];
 }
 
-void xor(int rd_index, int rs_index, int rt_index, int rm_index, struct Processor SIMP)
+voidxor (int rd_index, int rs_index, int rt_index, int rm_index, struct Processor SIMP)
 {
 	SIMP.Registers[rd_index] = (SIMP.Registers[rs_index] ^ SIMP.Registers[rt_index]) ^ SIMP.Registers[rm_index];
 }
@@ -135,6 +137,112 @@ void out(int rd_index, int rs_index, int rt_index, int rm_index, struct Processo
 void halt(struct Processor SIMP)
 {
 	SIMP.Flag = 0;
+}
+
+void insert_imm(struct Processor SIMP, int imm1, int imm2) {
+	SIMP.Registers[1] = imm1;
+	SIMP.Registers[2] = imm2;
+}
+
+
+int get_opcode(char* row) {
+
+}
+
+void get_indices(char* row, int indices[]) {
+
+}
+
+void get_imm(char* row, int imm[]) {
+
+}
+
+void execute_row(struct Processor SIMP,struct Memory memory,char* row) {
+	int opcode = translate(row);
+	int indices[4];
+	translate1(row, indices);
+	int immidiate[2];
+	translate2(row, immidiate);
+	insert_imm(SIMP, immidiate[0], immidiate[1]);
+	switch (opcode)
+	{
+	case 0:
+		add(indices[0], indices[1], indices[2], indices[3],SIMP);
+		break;
+	case 1:
+		sub(indices[0], indices[1], indices[2], indices[3], SIMP);
+		break;
+	case 2:
+		mac(indices[0], indices[1], indices[2], indices[3], SIMP);
+		break;
+	case 3:
+		and(indices[0], indices[1], indices[2], indices[3], SIMP);
+		break;
+	case 4:
+		or(indices[0], indices[1], indices[2], indices[3], SIMP);
+		break;
+	case 5:
+		xor(indices[0], indices[1], indices[2], indices[3], SIMP);
+		break;
+	case 6:
+		sll(indices[0], indices[1], indices[2], indices[3], SIMP);
+		break;
+	case 7:
+		sra(indices[0], indices[1], indices[2], indices[3], SIMP);
+		break;
+	case 8:
+		srl(indices[0], indices[1], indices[2], indices[3], SIMP);
+		break;
+	case 9:
+		beq(indices[0], indices[1], indices[2], indices[3], SIMP);
+		break;
+	case 10:
+		bne(indices[0], indices[1], indices[2], indices[3], SIMP);
+		break;
+	case 11:
+		blt(indices[0], indices[1], indices[2], indices[3], SIMP);
+		break;
+	case 12:
+		bgt(indices[0], indices[1], indices[2], indices[3], SIMP);
+		break;
+	case 13:
+		ble(indices[0], indices[1], indices[2], indices[3], SIMP);
+		break;
+	case 14:
+		bge(indices[0], indices[1], indices[2], indices[3], SIMP);
+		break;
+	case 15:
+		jal(indices[0], indices[1], indices[2], indices[3], SIMP);
+		break;
+	case 16:
+		lw(indices[0], indices[1], indices[2], indices[3], SIMP, memory);
+		break;
+	case 17:
+		sw(indices[0], indices[1], indices[2], indices[3], SIMP, memory);
+		break;
+	case 18:
+		reti(indices[0], indices[1], indices[2], indices[3], SIMP);
+		break;
+	case 19:
+		in(indices[0], indices[1], indices[2], indices[3], SIMP);
+		break;
+	case 20:
+		out(indices[0], indices[1], indices[2], indices[3], SIMP);
+		break;
+	case 21:
+		halt(SIMP);
+		break;
+	default:
+		break;
+	}
+}
+
+void execute_code(struct Processor SIMP, struct Memory memory) {
+	while (SIMP.Flag != 0) {
+		char line[100];
+		get_line(SIMP.executable, SIMP.PC, line);
+		execute_row(SIMP, memory,line);
+	}
 }
 
 /*void main()
