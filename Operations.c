@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "header.h"
+#include "Operations.h"
 #include "dictionary.h"
 
 struct Memory {
@@ -33,7 +33,7 @@ void mac(int rd_index, int rs_index, int rt_index, int rm_index, struct Processo
 	SIMP.Registers[rd_index] = SIMP.Registers[rs_index] * SIMP.Registers[rt_index] + SIMP.Registers[rm_index];
 }
 
-voidand (int rd_index, int rs_index, int rt_index, int rm_index, struct Processor SIMP)
+void and(int rd_index, int rs_index, int rt_index, int rm_index, struct Processor SIMP)
 {
 	SIMP.Registers[rd_index] = (SIMP.Registers[rs_index] & SIMP.Registers[rt_index]) & SIMP.Registers[rm_index];
 }
@@ -43,7 +43,7 @@ void or (int rd_index, int rs_index, int rt_index, int rm_index, struct Processo
 	SIMP.Registers[rd_index] = (SIMP.Registers[rs_index] | SIMP.Registers[rt_index]) | SIMP.Registers[rm_index];
 }
 
-voidxor (int rd_index, int rs_index, int rt_index, int rm_index, struct Processor SIMP)
+void xor(int rd_index, int rs_index, int rt_index, int rm_index, struct Processor SIMP)
 {
 	SIMP.Registers[rd_index] = (SIMP.Registers[rs_index] ^ SIMP.Registers[rt_index]) ^ SIMP.Registers[rm_index];
 }
@@ -146,28 +146,49 @@ void insert_imm(struct Processor SIMP, int imm1, int imm2) {
 
 
 int get_opcode(char* row) {
-
+	char* op;
+	strncpy(op, row, 2);
+	int opcode=hex2num(op);
+	return opcode;
 }
 
 void get_indices(char* row, int indices[]) {
-
+	char rd_hex, rs_hex, rt_hex, rm_hex;
+	rd_hex = row[2];
+	rs_hex = row[3];
+	rt_hex = row[4];
+	rm_hex = row[5];
+	indices[0] = hex2digit(rd_hex);
+	indices[1] = hex2digit(rs_hex);
+	indices[2] = hex2digit(rt_hex);
+	indices[3] = hex2digit(rm_hex);
 }
 
 void get_imm(char* row, int imm[]) {
-
+	char imm1_hex[4];
+	imm1_hex[3] = '\0';
+	char imm2_hex[4];
+	imm2_hex[3] = '\0';
+	for (int i = 0;i < 3;i++)
+	{
+		imm1_hex[i] = row[i + 6];
+		imm2_hex[i] = row[i + 9];
+	}
+	imm[0] = hex2num(imm1_hex);
+	imm[1] = hex2num(imm2_hex);
 }
 
-void execute_row(struct Processor SIMP,struct Memory memory,char* row) {
-	int opcode = translate(row);
+void execute_row(struct Processor SIMP, struct Memory memory, char* row) {
+	int opcode = get_opcode(row);
 	int indices[4];
-	translate1(row, indices);
+	get_indices(row, indices);
 	int immidiate[2];
-	translate2(row, immidiate);
+	get_imm(row, immidiate);
 	insert_imm(SIMP, immidiate[0], immidiate[1]);
 	switch (opcode)
 	{
 	case 0:
-		add(indices[0], indices[1], indices[2], indices[3],SIMP);
+		add(indices[0], indices[1], indices[2], indices[3], SIMP);
 		break;
 	case 1:
 		sub(indices[0], indices[1], indices[2], indices[3], SIMP);
@@ -176,13 +197,13 @@ void execute_row(struct Processor SIMP,struct Memory memory,char* row) {
 		mac(indices[0], indices[1], indices[2], indices[3], SIMP);
 		break;
 	case 3:
-		and(indices[0], indices[1], indices[2], indices[3], SIMP);
+		and (indices[0], indices[1], indices[2], indices[3], SIMP);
 		break;
 	case 4:
-		or(indices[0], indices[1], indices[2], indices[3], SIMP);
+		or (indices[0], indices[1], indices[2], indices[3], SIMP);
 		break;
 	case 5:
-		xor(indices[0], indices[1], indices[2], indices[3], SIMP);
+		xor (indices[0], indices[1], indices[2], indices[3], SIMP);
 		break;
 	case 6:
 		sll(indices[0], indices[1], indices[2], indices[3], SIMP);
@@ -241,7 +262,7 @@ void execute_code(struct Processor SIMP, struct Memory memory) {
 	while (SIMP.Flag != 0) {
 		char line[100];
 		get_line(SIMP.executable, SIMP.PC, line);
-		execute_row(SIMP, memory,line);
+		execute_row(SIMP, memory, line);
 	}
 }
 
