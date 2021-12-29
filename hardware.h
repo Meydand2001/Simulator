@@ -1,6 +1,8 @@
 #ifndef HARDWARE_H
 #define HARDWARE_H
 
+#include "Processor.h"
+
 typedef struct {
 	int enable;
 	int current;
