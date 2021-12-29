@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "hardware.h"
+#include "Processor.h"
 
 //timer functions 
 
@@ -15,7 +16,7 @@ Timer* allocatetimer() {
 	return t;
 }
 
-void init_hard_disk(Timer* t, int maxtime) {
+void init_timer(Timer* t, int maxtime) {
 	t->enable = 0;
 	t->current = 0;
 	t->max = maxtime;
@@ -30,6 +31,21 @@ void run(Timer* t) {
 			t->current++;
 		}
 	}
+}
+
+
+void timer_handler(Processor* SIMP) {
+	
+	if (SIMP->IO_Registers[11] != 0) {
+		if (SIMP->IO_Registers[12] >= SIMP->IO_Registers[13]) {
+			SIMP->IO_Registers[3] = 1;
+			SIMP->IO_Registers[12] = 0;// add irq
+		}
+		else {
+			SIMP->IO_Registers[12]++;
+		}
+	}
+
 }
 
 // monitor functions
