@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "Number_Operations.h"
+#include "NumberOperations.h"
 
 
 // all number operation which are used are located here.
