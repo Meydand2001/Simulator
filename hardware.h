@@ -8,8 +8,9 @@ typedef struct {
 }Timer;
 
 Timer* allocatetimer();
-void init_hard_disk(Timer* t, int maxtime);
+void init_timer(Timer* t, int maxtime);
 void run(Timer* t);
+void timer_handler(Processor* SIMP);
 
 typedef struct {
 	int pixels[256][256];
@@ -41,4 +42,3 @@ void get_content(Hard_disk* hd, int content[]);
 void read_sector(Hard_disk* hd, int sector, int buffer[]);
 void write_sector(Hard_disk* hd, int sector, int buffer[]);
 #endif 
-
