@@ -1,4 +1,3 @@
-
 #define _CRT_SECURE_NO_WARNINGS
 
 #include <stdio.h>
@@ -14,7 +13,7 @@ void imemin(struct Processor* SIMP, char* filename) {
 	char line[20];
 	filepointer = fopen(filename, 'r');
 	for (int i = 0; i < 1024; i++) {
-		
+
 	}
 }
 
@@ -36,7 +35,7 @@ void irq2in() {
 
 }
 
-void dmemout( struct Memory* memory,char* filename) {
+void dmemout(struct Memory* memory, char* filename) {
 	FILE* filepointer;
 	char line[20];
 	filepointer = fopen(filename, 'w');
