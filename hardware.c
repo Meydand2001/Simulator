@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "hardware.h"
-#include "Processor.h"
 
 //timer functions 
 
@@ -16,7 +15,7 @@ Timer* allocatetimer() {
 	return t;
 }
 
-void init_timer(Timer* t, int maxtime) {
+void init_Timer(Timer* t, int maxtime) {
 	t->enable = 0;
 	t->current = 0;
 	t->max = maxtime;
@@ -31,21 +30,6 @@ void run(Timer* t) {
 			t->current++;
 		}
 	}
-}
-
-
-void timer_handler(Processor* SIMP) {
-	
-	if (SIMP->IO_Registers[11] != 0) {
-		if (SIMP->IO_Registers[12] >= SIMP->IO_Registers[13]) {
-			SIMP->IO_Registers[3] = 1;
-			SIMP->IO_Registers[12] = 0;// add irq
-		}
-		else {
-			SIMP->IO_Registers[12]++;
-		}
-	}
-
 }
 
 // monitor functions
@@ -66,16 +50,16 @@ void init_monitor(Monitor* m) {
 	}
 }
 
-void write_pixel(Monitor* m,int address,int value) {
-	m->command=1;
-	m->address=address;
+void write_pixel(Monitor* m, int address, int value) {
+	m->command = 1;
+	m->address = address;
 	int i = address / 256;
 	int j = address % 256;
 	m->pixels[i][j] = value;
 	m->command = 0;
 }
 
-void get_pixel_content(Monitor* m,int* content[]) {//for now.
+void get_pixel_content(Monitor* m, int* content[]) {//for now.
 	for (int i = 0; i < 256; i++) {
 		for (int j = 0; j < 256; j++) {
 			content[i][j] = m->pixels[i][j];
@@ -93,7 +77,7 @@ Hard_disk* allocatedisk() {
 	return hd;
 }
 
-void init_hard_disk(Hard_disk* hd,int content[]) {
+void init_Timer(Hard_disk* hd, int content[]) {
 	for (int i = 0; i < 16384; i++) {
 		hd->disk[i] = content[i];
 	}
@@ -103,13 +87,13 @@ void init_hard_disk(Hard_disk* hd,int content[]) {
 	hd->command = 0;
 }
 
-void get_content(Hard_disk* hd,int content[]) {
+void get_content(Hard_disk* hd, int content[]) {
 	for (int i = 0; i < 16384; i++) {
-	    content[i] = hd->disk[i];
+		content[i] = hd->disk[i];
 	}
 }
 
-void read_sector(Hard_disk* hd,int sector, int buffer[]) {
+void read_sector(Hard_disk* hd, int sector, int buffer[]) {
 	hd->status = 1;
 	hd->command = 1;
 	for (int i = 0; i < hd->sector_size; i++) {
