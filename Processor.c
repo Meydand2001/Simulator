@@ -113,6 +113,7 @@ void sw(int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP,
 void reti(int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP)
 {
 	SIMP->PC = SIMP->IO_Registers[7];
+	SIMP->isHandlingInterrupt = 0; //no longer handling interrupt
 }
 
 void in(int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP)
@@ -169,7 +170,7 @@ void get_imm(char* row, int imm[]) {
 	imm[1] = hex2num(imm2_hex);
 }
 
-void execute_row(Processor* SIMP,Memory* memory,char* row) {
+void execute_row(Processor* SIMP, Memory* memory, char* row) {
 	int opcode = get_opcode(row);
 	int indices[4];
 	get_indices(row, indices);//
@@ -179,7 +180,7 @@ void execute_row(Processor* SIMP,Memory* memory,char* row) {
 	switch (opcode)
 	{
 	case 0:
-		add(indices[0], indices[1], indices[2], indices[3],SIMP);
+		add(indices[0], indices[1], indices[2], indices[3], SIMP);
 		break;
 	case 1:
 		sub(indices[0], indices[1], indices[2], indices[3], SIMP);
@@ -188,13 +189,13 @@ void execute_row(Processor* SIMP,Memory* memory,char* row) {
 		mac(indices[0], indices[1], indices[2], indices[3], SIMP);
 		break;
 	case 3:
-		and(indices[0], indices[1], indices[2], indices[3], SIMP);
+		and (indices[0], indices[1], indices[2], indices[3], SIMP);
 		break;
 	case 4:
-		or(indices[0], indices[1], indices[2], indices[3], SIMP);
+		or (indices[0], indices[1], indices[2], indices[3], SIMP);
 		break;
 	case 5:
-		xor(indices[0], indices[1], indices[2], indices[3], SIMP);
+		xor (indices[0], indices[1], indices[2], indices[3], SIMP);
 		break;
 	case 6:
 		sll(indices[0], indices[1], indices[2], indices[3], SIMP);
@@ -250,7 +251,7 @@ void execute_row(Processor* SIMP,Memory* memory,char* row) {
 
 	SIMP->IO_Registers[8]++; // clks++
 	timer_handler(SIMP); // timer.
-	
+
 
 
 
@@ -262,9 +263,10 @@ void execute_row(Processor* SIMP,Memory* memory,char* row) {
 		|| (SIMP->IO_Registers[2] && SIMP->IO_Registers[5]);
 
 
-	if (irq)
+	if (irq && !SIMP->isHandlingInterrupt)
 	{
-
+		SIMP->IO_Registers[7] = SIMP->PC; //irqreturn= current PC
+		SIMP->PC = SIMP->IO_Registers[6];
 	}
 	// add hardware functions here.
 }
@@ -273,7 +275,7 @@ void execute_code(Processor* SIMP, Memory* memory) {
 	while (SIMP->Flag != 0) {
 		char line[100];
 		get_line(SIMP->executable, SIMP->PC, line);
-		execute_row(SIMP, memory,line);
+		execute_row(SIMP, memory, line);
 	}
 }
 
