@@ -3,7 +3,7 @@
 
 #include "dictionary.h"
 
- typedef struct {
+typedef struct {
 	int Memory[4096];
 } Memory;
 
@@ -13,5 +13,6 @@ typedef struct {
 	int IO_Registers[23];
 	int PC;
 	int Flag;
+	int isHandlingInterrupt; //1 if is in an interrupt routine, 0 if is not.
 } Processor;
 #endif
