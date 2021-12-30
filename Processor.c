@@ -170,7 +170,7 @@ void get_imm(char* row, int imm[]) {
 	imm[1] = hex2num(imm2_hex);
 }
 
-void execute_row(Processor* SIMP, Memory* memory, char* row) {
+void execute_row(Processor* SIMP, Memory* memory,Hard_disk* hd,Monitor* monitor,char* row) {
 	int opcode = get_opcode(row);
 	int indices[4];
 	get_indices(row, indices);//
@@ -250,8 +250,11 @@ void execute_row(Processor* SIMP, Memory* memory, char* row) {
 	}
 
 	SIMP->IO_Registers[8]++; // clks++
-	timer_handler(SIMP); // timer.
 
+	//hardware functions:
+	timer_handler(SIMP); // timer.
+	hard_disk_handler(memory, hd, SIMP); //hard disk operations this iteration.
+	monitor_handler(monitor, SIMP);  //monitor operations this iteration.
 
 
 
@@ -268,14 +271,14 @@ void execute_row(Processor* SIMP, Memory* memory, char* row) {
 		SIMP->IO_Registers[7] = SIMP->PC; //irqreturn= current PC
 		SIMP->PC = SIMP->IO_Registers[6];
 	}
-	// add hardware functions here.
+
 }
 
-void execute_code(Processor* SIMP, Memory* memory) {
+void execute_code(Processor* SIMP, Memory* memory, Hard_disk* hd, Monitor* monitor) {
 	while (SIMP->Flag != 0) {
 		char line[100];
 		get_line(SIMP->executable, SIMP->PC, line);
-		execute_row(SIMP, memory, line);
+		execute_row(SIMP, memory, hd, monitor, line);
 	}
 }
 
