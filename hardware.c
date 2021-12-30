@@ -1,12 +1,13 @@
 #define _CRT_SECURE_NO_WARNINGS
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "hardware.h"
 
 //timer functions 
-
+/*
 Timer* allocatetimer() {
 	Timer* t = (Timer*)malloc(sizeof(Timer));
 	if (t == NULL) {
@@ -31,56 +32,60 @@ void run(Timer* t) {
 		}
 	}
 }
-
+*/
 void timer_handler(Processor* SIMP) {
-	
+
 	if (SIMP->IO_Registers[11] != 0) {
-		if (SIMP->IO_Registers[12] >= SIMP->IO_Registers[13]) {
-			SIMP->IO_Registers[3] = 1;
-			SIMP->IO_Registers[12] = 0;// add irq
+		if (SIMP->IO_Registers[12] >= SIMP->IO_Registers[13]) { //timercurrent larger than (or equal) to timer max.
+			SIMP->IO_Registers[3] = 1;  //irqstatus=1.
+			SIMP->IO_Registers[12] = 0; //timercurrent=0.
 		}
 		else {
-			SIMP->IO_Registers[12]++;
+			SIMP->IO_Registers[12]++; //timercurrent++.
 		}
 	}
 
 }
-
 
 // monitor functions
 
 Monitor* allocatemonitor() {
-	Monitor* m = (Monitor*)malloc(sizeof(Monitor));
-	if (m == NULL) {
+	Monitor* monitor = (Monitor*)malloc(sizeof(Monitor));
+	if (monitor == NULL) {
 		return NULL;
 	}
-	return m;
+	return monitor;
 }
 
-void init_monitor(Monitor* m) {
-	for (int i = 0; i < 256; i++) {
-		for (int j = 0; j < 256; j++) {
-			m->pixels[i][j] = 0;
-		}
+void init_monitor(Monitor* monitor) {
+	for (int i = 0; i < 256 * 256; i++) {
+		monitor->pixels[i] = 0;
 	}
 }
 
-void write_pixel(Monitor* m, int address, int value) {
-	m->command = 1;
-	m->address = address;
-	int i = address / 256;
-	int j = address % 256;
-	m->pixels[i][j] = value;
-	m->command = 0;
+void write_pixel(Monitor* monitor, int address, int value) {
+	monitor->pixels[address] = value;
 }
 
-void get_pixel_content(Monitor* m, int* content[]) {//for now.
-	for (int i = 0; i < 256; i++) {
-		for (int j = 0; j < 256; j++) {
-			content[i][j] = m->pixels[i][j];
-		}
+void get_pixel_content(Monitor* monitor, int content[]) {//for now.
+	for (int i = 0; i < 256 * 256; i++) {
+		content[i] = monitor->pixels[i];
 	}
 }
+
+void monitor_handler(Monitor* monitor, Processor* SIMP)
+{
+	if (SIMP->IO_Registers[22] == 1)
+	{
+		write_pixel(monitor, SIMP->IO_Registers[20], SIMP->IO_Registers[21]);
+		SIMP->IO_Registers[22] = 0;
+	}
+}
+
+
+
+
+
 
 // hard disk functions
 
@@ -92,14 +97,11 @@ Hard_disk* allocatedisk() {
 	return hd;
 }
 
-void init_Timer(Hard_disk* hd, int content[]) {
+void init_hard_disk(Hard_disk* hd, int content[]) {
 	for (int i = 0; i < 16384; i++) {
 		hd->disk[i] = content[i];
 	}
 	hd->sector_size = 128;
-	hd->cycle = 1024;
-	hd->status = 0;
-	hd->command = 0;
 }
 
 void get_content(Hard_disk* hd, int content[]) {
@@ -108,22 +110,52 @@ void get_content(Hard_disk* hd, int content[]) {
 	}
 }
 
-void read_sector(Hard_disk* hd, int sector, int buffer[]) {
-	hd->status = 1;
-	hd->command = 1;
+void read_sector(Memory* memory,Hard_disk* hd, int sector, int buffer) {
 	for (int i = 0; i < hd->sector_size; i++) {
-		buffer[i] = hd->disk[hd->sector_size * sector + i];
+		memory->Memory[buffer + i] = hd->disk[hd->sector_size * sector + i];
 	}
-	hd->command = 0;
-	hd->status = 0;
 }
 
-void write_sector(Hard_disk* hd, int sector, int buffer[]) {
-	hd->status = 1;
-	hd->command = 2;
+void write_sector(Memory* memory, Hard_disk* hd, int sector, int buffer) {
 	for (int i = 0; i < hd->sector_size; i++) {
-		hd->disk[hd->sector_size * sector + i] = buffer[i];
+		hd->disk[hd->sector_size * sector + i] = memory->Memory[buffer + i];
 	}
-	hd->command = 0;
-	hd->status = 0;
+}
+
+void hard_disk_handler(Memory* memory, Hard_disk* hd, Processor* SIMP)
+{
+	int cmd = SIMP->IO_Registers[14];
+	int disk_status = SIMP->IO_Registers[17];
+	if (disk_status == 0) {
+		switch (cmd)
+		{
+		case 1:
+		{
+			read_sector(memory, hd, SIMP->IO_Registers[15], SIMP->IO_Registers[16]);
+			SIMP->IO_Registers[17] = 1;
+			hd->cyclesSinceStart = 1;
+		} break;
+		case 2:
+		{
+			write_sector(memory, hd, SIMP->IO_Registers[15], SIMP->IO_Registers[16]);
+			SIMP->IO_Registers[17] = 1;
+			hd->cyclesSinceStart = 1;
+		} break;
+
+		default:
+			break;
+		}
+
+	}
+	else
+	{
+		if (hd->cyclesSinceStart >= 1024) {
+			SIMP->IO_Registers[17] = 0;
+			SIMP->IO_Registers[14] = 0;
+			SIMP->IO_Registers[4] = 1;
+		}
+		else
+			hd->cyclesSinceStart++;
+	}
+
 }
