@@ -8,7 +8,7 @@
 #include "Processor.h"
 #include "NumberOperations.h"
 
-void imemin(struct Processor* SIMP, char* filename) {
+void imemin(Processor* SIMP, char* filename) {
 	FILE* filepointer;
 	char line[20];
 	filepointer = fopen(filename, 'r');
@@ -17,7 +17,7 @@ void imemin(struct Processor* SIMP, char* filename) {
 	}
 }
 
-void dmemin(struct Memory* memory, char* filename) {
+void dmemin(Memory* memory, char* filename) {
 	FILE* filepointer;
 	char line[20];
 	filepointer = fopen(filename, 'r');
@@ -35,7 +35,7 @@ void irq2in() {
 
 }
 
-void dmemout(struct Memory* memory, char* filename) {
+void dmemout(Memory* memory, char* filename) {
 	FILE* filepointer;
 	char line[20];
 	filepointer = fopen(filename, 'w');
@@ -45,7 +45,7 @@ void dmemout(struct Memory* memory, char* filename) {
 	}
 }
 
-void regout(struct Processor* SIMP, char* filename) {
+void regout(Processor* SIMP, char* filename) {
 	FILE* filepointer;
 	char line[20];
 	filepointer = fopen(filename, 'w');
@@ -55,23 +55,23 @@ void regout(struct Processor* SIMP, char* filename) {
 	}
 }
 
-void trace(struct Processor* SIMP, char* filename) {
+void trace(Processor* SIMP, char* filename) {
 
 }
 
-void hwregtrace(struct Processor* SIMP, char* filename) {
+void hwregtrace(Processor* SIMP, char* filename) {
 
 }
 
-void cycles(struct Processor* SIMP, char* filename) {
+void cycles(Processor* SIMP, char* filename) {
 
 }
 
-void leds(struct Processor* SIMP, char* filename) {
+void leds(Processor* SIMP, char* filename) {
 
 }
 
-void display(struct Processor* SIMP) {
+void display(Processor* SIMP) {
 
 }
 
