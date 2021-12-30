@@ -32,6 +32,21 @@ void run(Timer* t) {
 	}
 }
 
+void timer_handler(Processor* SIMP) {
+	
+	if (SIMP->IO_Registers[11] != 0) {
+		if (SIMP->IO_Registers[12] >= SIMP->IO_Registers[13]) {
+			SIMP->IO_Registers[3] = 1;
+			SIMP->IO_Registers[12] = 0;// add irq
+		}
+		else {
+			SIMP->IO_Registers[12]++;
+		}
+	}
+
+}
+
+
 // monitor functions
 
 Monitor* allocatemonitor() {
