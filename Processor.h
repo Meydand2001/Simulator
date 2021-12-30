@@ -12,7 +12,7 @@ typedef struct {
 	int Registers[16];
 	int IO_Registers[23];
 	int PC;
-	int Flag;
+	int Flag;  //1 if processor is running, 0 if halt command was issued.
 	int isHandlingInterrupt; //1 if is in an interrupt routine, 0 if is not.
 } Processor;
 #endif
