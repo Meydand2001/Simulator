@@ -15,13 +15,11 @@ Timer* allocatetimer() {
 	}
 	return t;
 }
-
 void init_Timer(Timer* t, int maxtime) {
 	t->enable = 0;
 	t->current = 0;
 	t->max = maxtime;
 }
-
 void run(Timer* t) {
 	if (t->enable != 0) {
 		if (t->current == t->max) {
@@ -82,11 +80,6 @@ void monitor_handler(Monitor* monitor, Processor* SIMP)
 	}
 }
 
-
-
-
-
-
 // hard disk functions
 
 Hard_disk* allocatedisk() {
@@ -97,9 +90,14 @@ Hard_disk* allocatedisk() {
 	return hd;
 }
 
-void init_hard_disk(Hard_disk* hd, int content[]) {
+void init_hard_disk(Hard_disk* hd, Dictionary* diskin) {
 	for (int i = 0; i < 16384; i++) {
-		hd->disk[i] = content[i];
+		if (i < diskin->number_of_elements) {
+			//hd->disk[i]=translate(dmemin->list[i])
+		}
+		else {
+			hd->disk[i] = 0;
+		}
 	}
 	hd->sector_size = 128;
 }
@@ -110,7 +108,7 @@ void get_content(Hard_disk* hd, int content[]) {
 	}
 }
 
-void read_sector(Memory* memory,Hard_disk* hd, int sector, int buffer) {
+void read_sector(Memory* memory, Hard_disk* hd, int sector, int buffer) {
 	for (int i = 0; i < hd->sector_size; i++) {
 		memory->Memory[buffer + i] = hd->disk[hd->sector_size * sector + i];
 	}
