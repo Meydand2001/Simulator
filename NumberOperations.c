@@ -6,8 +6,7 @@
 #include "NumberOperations.h"
 
 
-// all number operation which are used are located here.
-
+// all number operation which are used are located here
 
 int hex2digit(char hex) {
 	int dig = 0;
@@ -165,4 +164,98 @@ int Pow(int base, int power) {
 		result *= base;
 	}
 	return result;
+}
+
+
+void dectobin(char num[], char* bin, int v) {//needs a slightly better solution. // v = 8 or 12
+	int number = atoi(num);
+	int pos = 1;
+	if (number < 0) {
+		number = number + 2048;
+		pos = 0;
+	}
+	int count = 0;
+	int flag = 0;
+	char st[13] = "";
+	char a[2] = "";
+	while (number != 0) {
+		if (number % 2 != 0) {
+			strcpy(a, "1");
+		}
+		else {
+			strcpy(a, "0");
+		}
+		strcat(st, a);
+		number /= 2;
+	}
+	_strrev(st);
+	strcpy(bin, st);
+	complete(bin, v, pos);
+}
+
+void bin2hex(char bin[], char* hex, int v) { // v = 8 or 12
+	char temp[20] = "";
+	char digit[5] = "0000";
+	for (int i = 0; i < v; i++) {
+		for (int j = 0; j < 4; j++) {
+			digit[j] = bin[4 * i + j];
+		}
+		if (strcmp(digit, "0000") == 0) {
+			strcat(temp, "0");
+		}
+		else if (strcmp(digit, "0001") == 0) {
+			strcat(temp, "1");
+		}
+		else if (strcmp(digit, "0010") == 0) {
+			strcat(temp, "2");
+		}
+		else if (strcmp(digit, "0011") == 0) {
+			strcat(temp, "3");
+		}
+		else if (strcmp(digit, "0100") == 0) {
+			strcat(temp, "4");
+		}
+		else if (strcmp(digit, "0101") == 0) {
+			strcat(temp, "5");
+		}
+		else if (strcmp(digit, "0110") == 0) {
+			strcat(temp, "6");
+		}
+		else if (strcmp(digit, "0111") == 0) {
+			strcat(temp, "7");
+		}
+		else if (strcmp(digit, "1000") == 0) {
+			strcat(temp, "8");
+		}
+		else if (strcmp(digit, "1001") == 0) {
+			strcat(temp, "9");
+		}
+		else if (strcmp(digit, "1010") == 0) {
+			strcat(temp, "A");
+		}
+		else if (strcmp(digit, "1011") == 0) {
+			strcat(temp, "B");
+		}
+		else if (strcmp(digit, "1100") == 0) {
+			strcat(temp, "C");
+		}
+		else if (strcmp(digit, "1101") == 0) {
+			strcat(temp, "D");
+		}
+		else if (strcmp(digit, "1110") == 0) {
+			strcat(temp, "E");
+		}
+		else if (strcmp(digit, "1111") == 0) {
+			strcat(temp, "F");
+		}
+	}
+	strcpy(hex, temp);
+}
+
+
+void num2hex(int number, char* hex, int v) {
+	char bin[48];
+	char hex[12];
+	num2bin(number, bin);
+	bin2hex(bin, hex, v);//
 }
