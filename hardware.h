@@ -16,7 +16,7 @@ void run(Timer* t);
 void timer_handler(Processor* SIMP);
 
 typedef struct {
-	int pixels[256*256]; //
+	int pixels[256 * 256]; //
 
 }Monitor;
 
@@ -38,10 +38,10 @@ typedef struct {
 
 
 Hard_disk* allocatedisk();
-void init_hard_disk(Hard_disk* hd, int content[]);
+void init_hard_disk(Hard_disk* hd, Dictionary* diskin);
 void get_content(Hard_disk* hd, int content[]);
 void read_sector(Memory* memory, Hard_disk* hd, int sector, int buffer);
 void write_sector(Memory* memory, Hard_disk* hd, int sector, int buffer);
-void hard_disk_handler(Memory* memory,Hard_disk* hd, Processor* SIMP);
+void hard_disk_handler(Memory* memory, Hard_disk* hd, Processor* SIMP);
 
 #endif 
