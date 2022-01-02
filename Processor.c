@@ -9,6 +9,58 @@
 #include "dictionary.h"
 
 
+Memory* allocated_mem() {
+	Memory* memory = (Memory*)malloc(sizeof(Memory));
+	if (memory == NULL) {
+		return NULL;
+	}
+	return memory;
+}
+
+void destroy_mem(Memory* memory) {
+	free(memory);
+}
+
+void init_memory(Memory* memory,Dictionary* dmemin) {
+	for (int i = 0; i < 4096; i++) {
+		if (i < dmemin->number_of_elements) {
+			//memory->Memory[i]=translate(dmemin->list[i])
+		}
+		else {
+			memory->Memory[i] = 0;
+		}
+	}
+}
+
+
+Processor* allocated_pro() {
+	Processor* SIMP = (Processor*)malloc(sizeof(Processor));
+	if (SIMP == NULL) {
+		return NULL;
+	}
+	return SIMP;
+}
+
+void destroy_pro(Processor* SIMP) {
+	destroydict(SIMP->executable);
+	free(SIMP);
+}
+
+void init_Processor(Processor* SIMP, Dictionary* executable) {
+	SIMP->executable = executable;
+	for (int i = 0; i < 16; i++) {
+		SIMP->Registers[i] = 0;
+	}
+	for (int i = 0; i < 23; i++) {
+		SIMP->IO_Registers[i] = 0;
+	}
+	SIMP->PC = 0;
+	SIMP->Flag = 1;
+	SIMP->isHandlingInterrupt = 0;
+}
+
+
+
 void add(int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP)
 {
 	SIMP->Registers[rd_index] = SIMP->Registers[rs_index] + SIMP->Registers[rt_index] + SIMP->Registers[rm_index];
@@ -24,17 +76,17 @@ void mac(int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP
 	SIMP->Registers[rd_index] = SIMP->Registers[rs_index] * SIMP->Registers[rt_index] + SIMP->Registers[rm_index];
 }
 
-void and (int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP)
+voidand (int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP)
 {
 	SIMP->Registers[rd_index] = (SIMP->Registers[rs_index] & SIMP->Registers[rt_index]) & SIMP->Registers[rm_index];
 }
 
-void or (int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP)
+void or (int rd_index, int rs_index, int rt_index, int rm_index, Processor * SIMP)
 {
 	SIMP->Registers[rd_index] = (SIMP->Registers[rs_index] | SIMP->Registers[rt_index]) | SIMP->Registers[rm_index];
 }
 
-void xor (int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP)
+voidxor (int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP)
 {
 	SIMP->Registers[rd_index] = (SIMP->Registers[rs_index] ^ SIMP->Registers[rt_index]) ^ SIMP->Registers[rm_index];
 }
@@ -170,13 +222,112 @@ void get_imm(char* row, int imm[]) {
 	imm[1] = hex2num(imm2_hex);
 }
 
-void execute_row(Processor* SIMP, Memory* memory,Hard_disk* hd,Monitor* monitor,char* row) {
+
+void index2name(int index, char* name) {
+	switch (index) {
+	case 0:
+		strcpy(name, "irq0enable");
+		break;
+	case 1:
+		strcpy(name, "irq1enable");
+		break;
+	case 2:
+		strcpy(name, "irq2enable");
+		break;
+	case 3:
+		strcpy(name, "irq0status");
+		break;
+	case 4:
+		strcpy(name, "irq1status");
+		break;
+	case 5:
+		strcpy(name, "irq2status");
+		break;
+	case 6:
+		strcpy(name, "irqhandler");
+		break;
+	case 7:
+		strcpy(name, "irqreturn");
+		break;
+	case 8:
+		strcpy(name, "clks");
+		break;
+	case 9:
+		strcpy(name, "leds");
+		break;
+	case 10:
+		strcpy(name, "display7seg");
+		break;
+	case 11:
+		strcpy(name, "timerenable");
+		break;
+	case 12:
+		strcpy(name, "timercurrent");
+		break;
+	case 13:
+		strcpy(name, "timermax");
+		break;
+	case 14:
+		strcpy(name, "diskcmd");
+		break;
+	case 15:
+		strcpy(name, "disksector");
+		break;
+	case 16:
+		strcpy(name, "diskbuffer");
+		break;
+	case 17:
+		strcpy(name, "diskstatus");
+		break;
+	case 18:
+		strcpy(name, "reserved1");
+		break;
+	case 19:
+		strcpy(name, "reserved2");
+		break;
+	case 20:
+		strcpy(name, "monitoraddr");
+		break;
+	case 21:
+		strcpy(name, "monitordata");
+		break;
+	case 22:
+		strcpy(name, "monitorcmd");
+		break;
+	default:
+		strcpy(name, "error");
+		break;
+	}
+
+}
+
+
+void execute_row(Processor* SIMP, Memory* memory, Hard_disk* hd, Monitor* monitor, char* row, Dictionary* trace,
+	Dictionary* hwregtrace, Dictionary* leds, Dictionary* display) {
 	int opcode = get_opcode(row);
 	int indices[4];
 	get_indices(row, indices);//
 	int immidiate[2];
 	get_imm(row, immidiate);//
 	insert_imm(SIMP, immidiate[0], immidiate[1]);
+	// write trace line here.
+	char trace_line[500]="";
+	char hex[15];
+	num2hex(SIMP->PC, hex, 3);
+
+	strcat(trace_line,hex);
+	strcat(trace_line," ");
+	strcat(trace_line, row);
+	for (int i = 0; i < 16; i++) {
+		num2hex(SIMP->Registers[i], hex, 8);
+		strcat(trace_line, " ");
+		strcat(trace_line, hex);
+	}
+	Element* e = allocate();
+	init_element(e, SIMP->PC, trace_line);
+	add_element(trace, e);
+	// trace ends here.
+
 	switch (opcode)
 	{
 	case 0:
@@ -238,9 +389,63 @@ void execute_row(Processor* SIMP, Memory* memory,Hard_disk* hd,Monitor* monitor,
 		break;
 	case 19:
 		in(indices[0], indices[1], indices[2], indices[3], SIMP);
+		// hwregtrace here
+		char hwregtrace_line[200] = "";
+		char piece[12];
+		itoa((unsigned int)(SIMP->IO_Registers[8]), piece, 10);
+		strcat(hwregtrace_line, piece);
+		strcat(hwregtrace_line, " WRITE ");
+		// index to name function.
+		index2name(SIMP->Registers[indices[1]] + SIMP->Registers[indices[2]], piece);
+		strcat(hwregtrace_line, piece);
+		strcat(hwregtrace_line, " ");
+		num2hex(SIMP->IO_Registers[SIMP->Registers[indices[1]] + SIMP->Registers[indices[2]]], piece, 8);
+		strcat(hwregtrace_line, piece);
+		Element* e = allocate();
+		init_element(e, SIMP->PC, hwregtrace_line);
+		add_element(hwregtrace, e);
 		break;
 	case 20:
 		out(indices[0], indices[1], indices[2], indices[3], SIMP);
+		//
+		char hwregtrace_line[200] = "";
+		char piece[12];
+		itoa((unsigned int)(SIMP->IO_Registers[8]), piece, 10);
+		strcat(hwregtrace_line, piece);
+		strcat(hwregtrace_line, " READ ");
+		// index to name function.
+		index2name(SIMP->Registers[indices[1]] + SIMP->Registers[indices[2]], piece);
+		strcat(hwregtrace_line, piece);
+		strcat(hwregtrace_line, " ");
+		num2hex(SIMP->IO_Registers[SIMP->Registers[indices[1]] + SIMP->Registers[indices[2]]], piece, 8);
+		strcat(hwregtrace_line, piece);
+		Element* e = allocate();
+		init_element(e, SIMP->PC, hwregtrace_line);
+		add_element(hwregtrace, e);
+		if (SIMP->Registers[indices[1]]+SIMP->Registers[indices[2]] == 9) {
+			char leds_line[100] = "";
+			char piece[12];
+			itoa((unsigned int)(SIMP->IO_Registers[8]), piece, 10);
+			strcat(leds_line, piece);
+			strcat(leds_line," ");
+			num2hex(SIMP->IO_Registers[9], piece, 8);
+			strcat(leds_line, piece);
+			Element* e = allocate();
+			init_element(e, SIMP->PC, leds_line);
+			add_element(leds, e);
+		}
+		if (SIMP->Registers[indices[1]] + SIMP->Registers[indices[2]] == 10) {
+			char display_line[100] = "";
+			char piece[12];
+			itoa((unsigned int)(SIMP->IO_Registers[8]), piece, 10);
+			strcat(display_line, piece);
+			strcat(display_line, " ");
+			num2hex(SIMP->IO_Registers[10], piece, 8);
+			strcat(display_line, piece);
+			Element* e = allocate();
+			init_element(e, SIMP->PC, display_line);
+			add_element(display, e);
+		}
 		break;
 	case 21:
 		halt(SIMP);
@@ -256,11 +461,6 @@ void execute_row(Processor* SIMP, Memory* memory,Hard_disk* hd,Monitor* monitor,
 	hard_disk_handler(memory, hd, SIMP); //hard disk operations this iteration.
 	monitor_handler(monitor, SIMP);  //monitor operations this iteration.
 
-
-
-
-
-
 	int irq = (SIMP->IO_Registers[0] && SIMP->IO_Registers[3])
 		|| (SIMP->IO_Registers[1] && SIMP->IO_Registers[4])
 		|| (SIMP->IO_Registers[2] && SIMP->IO_Registers[5]);
@@ -274,11 +474,13 @@ void execute_row(Processor* SIMP, Memory* memory,Hard_disk* hd,Monitor* monitor,
 
 }
 
-void execute_code(Processor* SIMP, Memory* memory, Hard_disk* hd, Monitor* monitor) {
+void execute_code(Processor* SIMP, Memory* memory, Hard_disk* hd, Monitor* monitor, Dictionary* trace,
+	Dictionary* hwregtrace, Dictionary* leds, Dictionary* display) {
 	while (SIMP->Flag != 0) {
 		char line[100];
 		get_line(SIMP->executable, SIMP->PC, line);
-		execute_row(SIMP, memory, hd, monitor, line);
+
+		execute_row(SIMP, memory, hd, monitor, line, trace, hwregtrace, leds, display);
 	}
 }
 
