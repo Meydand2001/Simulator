@@ -3,12 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "NumberOperations.h"
+#include "Number_operations.h"
 
 
 // all number operation which are used are located here
 
-int hex2digit(char hex) {
+int hex2digit(char hex) {// checked.
 	int dig = 0;
 	if ('0' <= hex && hex <= '9')
 		dig += hex - '0';
@@ -17,21 +17,23 @@ int hex2digit(char hex) {
 	return dig;
 }
 
-int hex2num(char* hex) {
-	int L = strlen(hex);
+int hex2num(char* hex) { // checked get a hex string and returns an unsigned int.
+	int l = strlen(hex);
+	//printf("%d\n",l);
 	int num = 0;
-	char* reverse_hex = _strrev(hex);
-	for (int i = 0; i < L; i++) //run backwards and sum over the digits with corresponding powers.
+	_strrev(hex);
+	//printf("%s\n", hex);
+	for (int i = 0; i < l; i++) //run backwards and sum over the digits with corresponding powers.
 	{
 		//printf("%d\n", num);
-		num += Pow(16, i) * Hex2Digit(reverse_hex[i]);
+		num += Pow(16, i) * hex2digit(hex[i]);
 	}
 	return num;
 }
 
-void complete(char* bin, int l, int pos) {
-	int n = l - strlen(bin);
-	char ln[20] = "";
+void complete(char* bin, int l, int pos) {// completes a binary number to certain bit length
+	int n = l - strlen(bin);              //  with zeros or zeros and one at the start
+	char ln[50] = "";
 	if (pos == 1) {
 		for (int i = 0; i < n; i++) {
 			strcat(ln, "0");
@@ -50,8 +52,28 @@ void complete(char* bin, int l, int pos) {
 }
 
 
-void hex2bin(char num[], char* bin) {
-	int i = 2;
+void pad0(char* num,int desiredLength) {
+	int l = strlen(num);
+	int numOfZeros = desiredLength - l;
+	num = _strrev(num);
+	for (int i = 0; i < numOfZeros; i++) {
+		strcat(num, "0");
+	}
+	num = _strrev(num);
+}
+
+void paddednum2hex(int num,char* hex, int desiredLength) {
+	_itoa(num, hex, 16);
+	pad0(hex, desiredLength);
+	int l = strlen(hex);
+	for (int i = 0; i < l; i++) {
+		hex[i] = toupper(hex[i]);
+	}
+}
+
+
+void hex2bin(char num[], char* bin, int l) { // make sure bin initialized. works 
+	int i = 0;
 	while (num[i] != '\0') {
 		if (num[i] == '0') {
 			strcat(bin, "0000");
@@ -103,36 +125,15 @@ void hex2bin(char num[], char* bin) {
 		}
 		i++;
 	}
-	complete(bin, 12, 1);
+	//printf("%s\n",bin);
+	complete(bin, l, 1);
 }
 
-void num2bin(int number, char* bin) {
-	int pos = 1;
-	int count = 0;
-	int flag = 0;
-	char st[13] = "";
-	char a[2] = "";
-	while (number != 0) {
-		if (number % 2 != 0) {
-			strcpy(a, "1");
-		}
-		else {
-			strcpy(a, "0");
-		}
-		strcat(st, a);
-		number /= 2;
-	}
-
-	_strrev(st);
-	strcat(bin, st);
-	complete(bin, 12, pos);
-
-}
-
-void signednum2bin(int number, char* bin) {//needs a slightly better solution.
+void signednum2bin(int number, char* bin, int l) {//needs a slightly better solution.
 	int pos = 1;
 	if (number < 0) {
-		number = number + 2048;
+		number = number + Pow(2,l-1);
+		printf("%d\n", number);
 		pos = 0;
 	}
 	int count = 0;
@@ -152,13 +153,12 @@ void signednum2bin(int number, char* bin) {//needs a slightly better solution.
 
 	_strrev(st);
 	strcat(bin, st);
-	complete(bin, 12, pos);
+	//printf("%s\n", bin);
+	complete(bin, l, pos);
+	//printf("%s\n", bin);
 }
 
-
-
-
-int Pow(int base, int power) {
+int Pow(int base, int power) {//check
 	int result = 1;
 	for (int i = 0; i < power; i++) {
 		result *= base;
@@ -166,37 +166,16 @@ int Pow(int base, int power) {
 	return result;
 }
 
-
-void dectobin(char num[], char* bin, int v) {//needs a slightly better solution. // v = 8 or 12
+void signeddec2bin(char num[], char* bin, int l) {//needs a slightly better solution. // v = 8 or 12 checked.
 	int number = atoi(num);
-	int pos = 1;
-	if (number < 0) {
-		number = number + 2048;
-		pos = 0;
-	}
-	int count = 0;
-	int flag = 0;
-	char st[13] = "";
-	char a[2] = "";
-	while (number != 0) {
-		if (number % 2 != 0) {
-			strcpy(a, "1");
-		}
-		else {
-			strcpy(a, "0");
-		}
-		strcat(st, a);
-		number /= 2;
-	}
-	_strrev(st);
-	strcpy(bin, st);
-	complete(bin, v, pos);
+	signednum2bin(number, bin, l);
 }
 
-void bin2hex(char bin[], char* hex, int v) { // v = 8 or 12
+
+void bin2hex(char bin[], char* hex, int l) { // v = 8 or 12 checked
 	char temp[20] = "";
 	char digit[5] = "0000";
-	for (int i = 0; i < v; i++) {
+	for (int i = 0; i < l; i++) {
 		for (int j = 0; j < 4; j++) {
 			digit[j] = bin[4 * i + j];
 		}
@@ -253,9 +232,9 @@ void bin2hex(char bin[], char* hex, int v) { // v = 8 or 12
 }
 
 
-void num2hex(int number, char* hex, int v) {
-	char bin[48];
-	char hex[12];
-	num2bin(number, bin);
-	bin2hex(bin, hex, v);//
+void num2hex(int number, char* hex, int l) {// checked
+	char bin[48]="";
+	signednum2bin(number, bin,l);
+	//printf("%s", bin);
+	bin2hex(bin, hex, l);
 }
