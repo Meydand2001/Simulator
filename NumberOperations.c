@@ -31,6 +31,33 @@ int hex2num(char* hex) { // checked get a hex string and returns an unsigned int
 	return num;
 }
 
+
+int signedbin2num(char* bin) { // checked get a hex string and returns an unsigned int.
+	int l = strlen(bin);
+	//printf("%d\n",l);
+	int num = 0;
+	_strrev(bin);
+	//printf("%s\n", hex);
+	for (int i = 0; i < l-1; i++) //run backwards and sum over the digits with corresponding powers.
+	{
+		//printf("%d\n", num);
+		if (bin[i] == '1')
+			num += Pow(2, i);
+	}
+	if (bin[l - 1] == '1')
+		num -= Pow(2, l - 1);
+
+	return num;
+}
+
+
+int signedhex2num(char* hex, int length) {
+	char bin[48] = "";
+	hex2bin(hex, bin, length);
+	int n = signedbin2num(bin);
+	return n;
+}
+
 void complete(char* bin, int l, int pos) {// completes a binary number to certain bit length
 	int n = l - strlen(bin);              //  with zeros or zeros and one at the start
 	char ln[50] = "";
