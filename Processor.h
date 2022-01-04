@@ -20,7 +20,7 @@ typedef struct {
 
 
 typedef struct {
-	int disk[16384];
+	int disk[16384]; // 128 sectors * 128 words per sector(512 bytes)
 	int sector_size;
 	int cyclesSinceStart;
 }Harddisk;
