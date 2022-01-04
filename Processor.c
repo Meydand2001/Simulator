@@ -71,7 +71,6 @@ Harddisk* allocatedisk() {
 void init_hard_disk(Harddisk* hd, Dictionary* diskin) {
 	for (int i = 0; i < 16384; i++) {
 		if (i < diskin->number_of_elements) {
-			//hd->disk[i]=translate(dmemin->list[i])
 			hd->disk[i] = signedhex2num(diskin->list[i].line, 32);
 		}
 		else {
@@ -230,12 +229,22 @@ void sll(int rd_index, int rs_index, int rt_index, int rm_index, Processor*SIMP)
 
 void sra(int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP)
 {
-	SIMP->Registers[rd_index] = ~((~SIMP->Registers[rs_index]) >> SIMP->Registers[rt_index]);
+	//SIMP->Registers[rd_index] = ~((~SIMP->Registers[rs_index]) >> SIMP->Registers[rt_index]);
+	SIMP->Registers[rd_index] = SIMP->Registers[rs_index] >> SIMP->Registers[rt_index];
 }
 
 void srl(int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP)
 {
-	SIMP->Registers[rd_index] = SIMP->Registers[rs_index] >> SIMP->Registers[rt_index];
+	int shift = SIMP->Registers[rt_index];
+	int source = SIMP->Registers[rs_index];
+	if (source>= 0) {
+		SIMP->Registers[rd_index] = source >> shift;
+	}
+	else {
+		int mask = -1;
+		mask = mask << (32 - shift); //mask[0:31-shift]=0, mask[31-shift+1:31]=1
+		SIMP->Registers[rd_index] = (source >> shift) ^ mask;
+	}
 }
 
 void beq(int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP)
@@ -345,6 +354,7 @@ void halt(Processor* SIMP)
 }
 
 void insert_imm(Processor* SIMP, int imm1, int imm2) {
+	SIMP->Registers[0] = 0; // changes $zero back in case it was changed.
 	SIMP->Registers[1] = imm1;
 	SIMP->Registers[2] = imm2;
 }
@@ -467,7 +477,7 @@ void index2name(int index, char* name) {
 }
 
 void write_trace(Processor* SIMP, Dictionary* trace, char* row) {
-	printf("trace: ");
+	//printf("trace: ");
 	char trace_line[500] = "";
 	char hex[15];
 	//num2hex(SIMP->PC, hex, 12);
@@ -480,22 +490,21 @@ void write_trace(Processor* SIMP, Dictionary* trace, char* row) {
 	for (int i = 0; i < 16; i++) {
 		//num2hex(SIMP->Registers[i], hex, 32);
 		paddednum2hex(SIMP->Registers[i], hex, 8);
-		if (i == 2) {
-			printf("imm2:  %d\n ", SIMP->Registers[i]);
-		}
 		//printf("%s",hex);
 		strcat(trace_line, " ");
 		strcat(trace_line, hex);
 		//printf("%s\n", trace_line);
 	}
+	//if (SIMP->IO_Registers[8] % 10 == 0) {
 	printf("%s\n", trace_line);
+	//}
+	//printf("%s\n", trace_line);
 	Element* e = allocate();
 	init_element(e, SIMP->PC, trace_line);
 	add_element(trace, e);
 }
 
 void write_hwregtrace(Processor* SIMP, Dictionary* hwregtrace,int index1, int index2, int type) {
-	printf("hwregtrace: ");
 	char hwregtrace_line[200] = "";
 	char piece[12];
 	//long un = (unsigned long)(SIMP->IO_Registers[8]);//////// houston we have a problem.
@@ -523,7 +532,7 @@ void write_hwregtrace(Processor* SIMP, Dictionary* hwregtrace,int index1, int in
 	//printf("%d\n",SIMP->IO_Registers[SIMP->Registers[index1] + SIMP->Registers[index2]]);
 	paddednum2hex(SIMP->IO_Registers[SIMP->Registers[index1] + SIMP->Registers[index2]], data, 8);
 	strcat(hwregtrace_line, data);
-	printf("%s\n", hwregtrace_line);
+	//printf("%s\n", hwregtrace_line);
 	Element* e = allocate();
 	init_element(e, SIMP->PC, hwregtrace_line);
 	add_element(hwregtrace, e);
@@ -643,7 +652,7 @@ void execute_row(Processor* SIMP, Memory* memory, Harddisk* hd, Monitor* monitor
 		break;
 	case 17:
 		sw(indices[0], indices[1], indices[2], indices[3], SIMP, memory);
-		printf(" stored memory value %d\n", memory->Memory[SIMP->Registers[indices[1]] + SIMP->Registers[indices[1]]]);
+		//printf(" stored memory value %d\n", memory->Memory[SIMP->Registers[indices[1]] + SIMP->Registers[indices[1]]]);
 		break;
 	case 18:
 		reti(indices[0], indices[1], indices[2], indices[3], SIMP);
@@ -693,7 +702,10 @@ void execute_code(Processor* SIMP, Memory* memory, Harddisk* hd, Monitor* monito
 
 	char line[100];
 	while (SIMP->Flag != 0) {
-		printf("%d\n\n", SIMP->IO_Registers[8]);
+		//if (SIMP->IO_Registers[8] % 10000 == 0) {
+			printf("%d\n\n", SIMP->IO_Registers[8]);
+		//}
+		//printf("%d\n\n", SIMP->IO_Registers[8]);
 		irq2handler(SIMP);
 		get_line(SIMP->executable, SIMP->PC, line);
 		printf("%s\n", line);
@@ -703,9 +715,13 @@ void execute_code(Processor* SIMP, Memory* memory, Harddisk* hd, Monitor* monito
 			|| (SIMP->IO_Registers[1] && SIMP->IO_Registers[4])
 			|| (SIMP->IO_Registers[2] && SIMP->IO_Registers[5]);
 
-
+		int resultirq = irq && !SIMP->isHandlingInterrupt;
+		printf("irq: %d\n", irq);
+		printf(" is handling irq %d\n", resultirq);
+		printf(" total irq %d\n",resultirq);
 		if (irq && !SIMP->isHandlingInterrupt)
 		{
+			SIMP->isHandlingInterrupt = 1;
 			SIMP->IO_Registers[7] = SIMP->PC; //irqreturn = current PC
 			SIMP->PC = SIMP->IO_Registers[6];
 		}
