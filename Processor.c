@@ -6,6 +6,7 @@
 
 #include "Processor.h"
 #include "Dictionary.h"
+#include "Number_operations.h"
 
 
 void timer_handler(Processor* SIMP) {
@@ -71,6 +72,7 @@ void init_hard_disk(Harddisk* hd, Dictionary* diskin) {
 	for (int i = 0; i < 16384; i++) {
 		if (i < diskin->number_of_elements) {
 			//hd->disk[i]=translate(dmemin->list[i])
+			hd->disk[i] = signedhex2num(diskin->list[i].line, 32);
 		}
 		else {
 			hd->disk[i] = 0;
@@ -79,11 +81,11 @@ void init_hard_disk(Harddisk* hd, Dictionary* diskin) {
 	hd->sector_size = 128;
 }
 
-void get_content(Harddisk* hd, int content[]) {
-	for (int i = 0; i < 16384; i++) {
-		content[i] = hd->disk[i];
-	}
-}
+//void get_content(Harddisk* hd, int content[]) {
+//	for (int i = 0; i < 16384; i++) {
+//		content[i] = hd->disk[i];
+//	}
+//}
 
 void read_sector(Memory* memory, Harddisk* hd, int sector, int buffer) {
 	for (int i = 0; i < hd->sector_size; i++) {
@@ -153,7 +155,7 @@ void destroy_mem(Memory* memory) {
 void init_memory(Memory* memory, Dictionary* dmemin) {
 	for (int i = 0; i < 4096; i++) {
 		if (i < dmemin->number_of_elements) {
-			//memory->Memory[i]=translate(dmemin->list[i])
+			memory->Memory[i] = signedhex2num(dmemin->list[i].line,32);
 		}
 		else {
 			memory->Memory[i] = 0;
@@ -175,18 +177,20 @@ void destroy_pro(Processor* SIMP) {
 	free(SIMP);
 }
 
-void init_Processor(Processor* SIMP, Dictionary* executable) {
+void init_Processor(Processor* SIMP, Dictionary* executable, Dictionary* irq2in) {
 	SIMP->executable = executable;
+	SIMP->irq2in = irq2in;
 	for (int i = 0; i < 16; i++) {
 		SIMP->Registers[i] = 0;
 	}
 	for (int i = 0; i < 23; i++) {
 		SIMP->IO_Registers[i] = 0;
 	}
-	//SIMP->IO_Registers[8] = -1;
+	SIMP->IO_Registers[8] = 0;
 	SIMP->PC = 0;
 	SIMP->Flag = 1;
 	SIMP->isHandlingInterrupt = 0;
+	SIMP->hasJumped = 0;
 }
 
 void add(int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP)
@@ -236,64 +240,93 @@ void srl(int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP
 
 void beq(int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP)
 {
-	if (SIMP->Registers[rs_index] == SIMP->Registers[rt_index])
-		SIMP->PC = SIMP->Registers[rm_index] % Pow(2, 12);  //mod 2^12 to take the low [11:0] bits.
+	if (SIMP->Registers[rs_index] == SIMP->Registers[rt_index]) {
+		SIMP->PC = SIMP->Registers[rm_index] % Pow(2, 12);//mod 2^12 to take the low [11:0] bits.
+		SIMP->hasJumped = 1;
+	}
 }
 
 void bne(int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP)
 {
-	if (SIMP->Registers[rs_index] != SIMP->Registers[rt_index])
-		SIMP->PC = SIMP->Registers[rm_index] % Pow(2, 12);  //mod 2^12 to take the low [11:0] bits.
+	if (SIMP->Registers[rs_index] != SIMP->Registers[rt_index]) {
+		SIMP->PC = SIMP->Registers[rm_index] % Pow(2, 12);//mod 2^12 to take the low [11:0] bits.
+		SIMP->hasJumped = 1;
+	}
 }
 
 
 void blt(int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP)
 {
-	if (SIMP->Registers[rs_index] < SIMP->Registers[rt_index])
+	if (SIMP->Registers[rs_index] < SIMP->Registers[rt_index]) {
 		SIMP->PC = SIMP->Registers[rm_index] % Pow(2, 12);  //mod 2^12 to take the low [11:0] bits.
+		SIMP->hasJumped = 1;
+	}
 }
 
 
 void bgt(int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP)
 {
-	if (SIMP->Registers[rs_index] > SIMP->Registers[rt_index])
+	if (SIMP->Registers[rs_index] > SIMP->Registers[rt_index]) {
 		SIMP->PC = SIMP->Registers[rm_index] % Pow(2, 12);  //mod 2^12 to take the low [11:0] bits.
+		SIMP->hasJumped = 1;
+	}
 }
 
 
 void ble(int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP)
 {
-	if (SIMP->Registers[rs_index] <= SIMP->Registers[rt_index])
+	if (SIMP->Registers[rs_index] <= SIMP->Registers[rt_index]) {
 		SIMP->PC = SIMP->Registers[rm_index] % Pow(2, 12);  //mod 2^12 to take the low [11:0] bits.
+		SIMP->hasJumped = 1;
+	}
 }
 
 
 void bge(int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP)
 {
-	if (SIMP->Registers[rs_index] >= SIMP->Registers[rt_index])
+	if (SIMP->Registers[rs_index] >= SIMP->Registers[rt_index]) {
 		SIMP->PC = SIMP->Registers[rm_index] % Pow(2, 12);  //mod 2^12 to take the low [11:0] bits.
+		SIMP->hasJumped = 1;
+	}
 }
 
 void jal(int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP)
 {
 	SIMP->Registers[rd_index] = SIMP->PC + 1;
 	SIMP->PC = SIMP->Registers[rm_index] % Pow(2, 12);  //mod 2^12 to take the low [11:0] bits.
+	SIMP->hasJumped = 1;
 }
 
 void lw(int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP, Memory* memory)
 {
+	/*printf("\nLW\n");
+	printf("%d\n",memory->Memory[2030]);
+
+	printf(" index reg: %d, index mem: %d\n ", rd_index, SIMP->Registers[rs_index] + SIMP->Registers[rt_index]);
+	printf(" old value: %d, new value: %d\n ", SIMP->Registers[rd_index], memory->Memory[SIMP->Registers[rs_index] + SIMP->Registers[rt_index]] );*/
 	SIMP->Registers[rd_index] = memory->Memory[SIMP->Registers[rs_index] + SIMP->Registers[rt_index]] + SIMP->Registers[rm_index];
 }
 
 void sw(int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP, Memory* memory)
 {
-	memory->Memory[SIMP->Registers[rs_index]] = SIMP->Registers[rm_index] + SIMP->Registers[rd_index];
+	/*printf("\nSW\n");
+	for (int i = 2047; i > 2029; i--) {
+		printf("%d\n", memory->Memory[i]);
+	}*/
+	//memory->Memory[2040] = 20;
+	//printf(" index mem: %d\n ", SIMP->Registers[rs_index] + SIMP->Registers[rt_index]);
+	//printf(" old memory value: %d, new memory value : %d\n ", SIMP->Registers[rd_index], memory->Memory[SIMP->Registers[rs_index] + SIMP->Registers[rt_index]] + SIMP->Registers[rm_index]);
+	int n = SIMP->Registers[rs_index] + SIMP->Registers[rt_index];
+	int d = SIMP->Registers[rm_index] + SIMP->Registers[rd_index];
+	memory->Memory[n] = d;
 }
 
 void reti(int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP)
 {
 	SIMP->PC = SIMP->IO_Registers[7];
 	SIMP->isHandlingInterrupt = 0; //no longer handling interrupt
+	SIMP->hasJumped = 1;
+
 }
 
 void in(int rd_index, int rs_index, int rt_index, int rm_index, Processor* SIMP)
@@ -349,8 +382,9 @@ void get_imm(char* row, int imm[]) {
 		imm1_hex[i] = row[i + 6];
 		imm2_hex[i] = row[i + 9];
 	}
-	imm[0] = hex2num(imm1_hex);
-	imm[1] = hex2num(imm2_hex);
+	imm[0] = signedhex2num(imm1_hex,12);
+	imm[1] = signedhex2num(imm2_hex,12);
+	//imm[0]= atoi()
 }
 
 
@@ -433,9 +467,11 @@ void index2name(int index, char* name) {
 }
 
 void write_trace(Processor* SIMP, Dictionary* trace, char* row) {
+	printf("trace: ");
 	char trace_line[500] = "";
 	char hex[15];
-	num2hex(SIMP->PC, hex, 12);
+	//num2hex(SIMP->PC, hex, 12);
+	paddednum2hex(SIMP->PC,hex, 3);
 	strcat(trace_line, hex);
 	//printf("%s\n", trace_line);
 	strcat(trace_line, " ");
@@ -444,6 +480,9 @@ void write_trace(Processor* SIMP, Dictionary* trace, char* row) {
 	for (int i = 0; i < 16; i++) {
 		//num2hex(SIMP->Registers[i], hex, 32);
 		paddednum2hex(SIMP->Registers[i], hex, 8);
+		if (i == 2) {
+			printf("imm2:  %d\n ", SIMP->Registers[i]);
+		}
 		//printf("%s",hex);
 		strcat(trace_line, " ");
 		strcat(trace_line, hex);
@@ -456,11 +495,18 @@ void write_trace(Processor* SIMP, Dictionary* trace, char* row) {
 }
 
 void write_hwregtrace(Processor* SIMP, Dictionary* hwregtrace,int index1, int index2, int type) {
+	printf("hwregtrace: ");
 	char hwregtrace_line[200] = "";
 	char piece[12];
 	//long un = (unsigned long)(SIMP->IO_Registers[8]);//////// houston we have a problem.
 	//printf("%u", un);
-	_itoa((unsigned long)(SIMP->IO_Registers[8]), piece, 10);
+
+	/*unsigned int x = (unsigned int)(SIMP->IO_Registers[8]);
+	printf("%u", x);*/
+	sprintf(piece,"%u", SIMP->IO_Registers[8]);
+	//_itoa((unsigned int)(SIMP->IO_Registers[8]), piece, 10);
+	//printf("%s", piece);
+	//paddednum2hex();
 	strcat(hwregtrace_line, piece);
 	if (type == 1) {
 		strcat(hwregtrace_line, " WRITE ");
@@ -468,13 +514,13 @@ void write_hwregtrace(Processor* SIMP, Dictionary* hwregtrace,int index1, int in
 	else {
 		strcat(hwregtrace_line, " READ ");
 	}
-	printf("%s\n", hwregtrace_line);
+	//printf("%s\n", hwregtrace_line);
 	// index to name function.
 	index2name(SIMP->Registers[index1] + SIMP->Registers[index2], piece);
 	strcat(hwregtrace_line, piece);
 	strcat(hwregtrace_line, " ");
 	char data[15];
-	printf("%d\n",SIMP->IO_Registers[SIMP->Registers[index1] + SIMP->Registers[index2]]);
+	//printf("%d\n",SIMP->IO_Registers[SIMP->Registers[index1] + SIMP->Registers[index2]]);
 	paddednum2hex(SIMP->IO_Registers[SIMP->Registers[index1] + SIMP->Registers[index2]], data, 8);
 	strcat(hwregtrace_line, data);
 	printf("%s\n", hwregtrace_line);
@@ -484,34 +530,55 @@ void write_hwregtrace(Processor* SIMP, Dictionary* hwregtrace,int index1, int in
 }
 
 void write_leds(Processor* SIMP, Dictionary* leds) {
+	printf("leds: ");
 	char leds_line[100] = "";
 	char piece[12];
 	_itoa((unsigned int)(SIMP->IO_Registers[8]), piece, 10);
 	strcat(leds_line, piece);
 	strcat(leds_line, " ");
-	num2hex(SIMP->IO_Registers[9], piece, 32);
+	//num2hex(SIMP->IO_Registers[9], piece, 32);
+	paddednum2hex(SIMP->IO_Registers[9], piece, 8);
 	strcat(leds_line, piece);
+	printf("%s\n", leds_line);
 	Element* e = allocate();
 	init_element(e, SIMP->PC, leds_line);
 	add_element(leds, e);
 }
 
 void write_display(Processor* SIMP, Dictionary* display) {
+	printf("display: ");
 	char display_line[100] = "";
 	char piece[12];
 	_itoa((unsigned int)(SIMP->IO_Registers[8]), piece, 10);// careful
 	strcat(display_line, piece);
 	strcat(display_line, " ");
-	num2hex(SIMP->IO_Registers[10], piece, 32);
+	//num2hex(SIMP->IO_Registers[10], piece, 32);
+	paddednum2hex(SIMP->IO_Registers[10], piece, 8);
 	strcat(display_line, piece);
+	printf("%s\n", display_line);
 	Element* e = allocate();
 	init_element(e, SIMP->PC, display_line);
 	add_element(display, e);
 }
 
+void irq2handler(Processor* SIMP) {
+	int l = SIMP->irq2in->number_of_elements;
+	int isIrq = 0;
+	for (int i = 0; i < l; i++) {
+		int n = atoi(SIMP->irq2in->list[i].line);
+		if (SIMP->IO_Registers[8] == n) {
+			isIrq = 1;
+			break;
+		}
+	}
+	SIMP->IO_Registers[5] = isIrq;
+}
+
+
 
 void execute_row(Processor* SIMP, Memory* memory, Harddisk* hd, Monitor* monitor, char* row, Dictionary* trace,
 	Dictionary* hwregtrace, Dictionary* leds, Dictionary* display) {
+
 	int opcode = get_opcode(row);
 	int indices[4];
 	get_indices(row, indices);//
@@ -572,9 +639,11 @@ void execute_row(Processor* SIMP, Memory* memory, Harddisk* hd, Monitor* monitor
 		break;
 	case 16:
 		lw(indices[0], indices[1], indices[2], indices[3], SIMP, memory);
+		//printf(" loaded memory value %d",memory->)
 		break;
 	case 17:
 		sw(indices[0], indices[1], indices[2], indices[3], SIMP, memory);
+		printf(" stored memory value %d\n", memory->Memory[SIMP->Registers[indices[1]] + SIMP->Registers[indices[1]]]);
 		break;
 	case 18:
 		reti(indices[0], indices[1], indices[2], indices[3], SIMP);
@@ -610,28 +679,36 @@ void execute_row(Processor* SIMP, Memory* memory, Harddisk* hd, Monitor* monitor
 	timer_handler(SIMP); // timer.
 	hard_disk_handler(memory, hd, SIMP); //hard disk operations this iteration.
 	monitor_handler(monitor, SIMP);  //monitor operations this iteration.
-
-	int irq = (SIMP->IO_Registers[0] && SIMP->IO_Registers[3])
-		|| (SIMP->IO_Registers[1] && SIMP->IO_Registers[4])
-		|| (SIMP->IO_Registers[2] && SIMP->IO_Registers[5]);
-
-	SIMP->PC++;
-
-	if (irq && !SIMP->isHandlingInterrupt)
-	{
-		SIMP->IO_Registers[7] = SIMP->PC; //irqreturn= current PC
-		SIMP->PC = SIMP->IO_Registers[6];
+	if (SIMP->hasJumped == 1) {
+		SIMP->hasJumped = 0;
+	}
+	else {
+		SIMP->PC++;
 	}
 
 }
 
 void execute_code(Processor* SIMP, Memory* memory, Harddisk* hd, Monitor* monitor, Dictionary* trace,
 	Dictionary* hwregtrace, Dictionary* leds, Dictionary* display) {
+
+	char line[100];
 	while (SIMP->Flag != 0) {
-		char line[100];
+		printf("%d\n\n", SIMP->IO_Registers[8]);
+		irq2handler(SIMP);
 		get_line(SIMP->executable, SIMP->PC, line);
 		printf("%s\n", line);
 		execute_row(SIMP, memory, hd, monitor, line, trace, hwregtrace, leds, display);
+		//irq2handler(SIMP);
+		int irq = (SIMP->IO_Registers[0] && SIMP->IO_Registers[3])
+			|| (SIMP->IO_Registers[1] && SIMP->IO_Registers[4])
+			|| (SIMP->IO_Registers[2] && SIMP->IO_Registers[5]);
+
+
+		if (irq && !SIMP->isHandlingInterrupt)
+		{
+			SIMP->IO_Registers[7] = SIMP->PC; //irqreturn = current PC
+			SIMP->PC = SIMP->IO_Registers[6];
+		}
 	}
 }
 
