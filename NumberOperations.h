@@ -14,5 +14,7 @@ void signednum2bin(int number, char* bin,int l);
 void signeddec2bin(char num[], char* bin, int l);
 void bin2hex(char bin[], char* hex, int l);
 void num2hex(int number, char* hex, int v);
+int signedbin2num(char* bin);
+int signedhex2num(char* hex, int length);
 
 #endif
