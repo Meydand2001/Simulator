@@ -185,10 +185,10 @@ void main() {
 	init_monitor(monitor);
 
 	Dictionary* trace = allocatedict();
-	init_dictionary(trace, 16384);
+	init_dictionary(trace, 3097152);
 
 	Dictionary* hwregtrace = allocatedict();
-	init_dictionary(hwregtrace, 4096);
+	init_dictionary(hwregtrace, 3097152);
 
 	Dictionary* leds = allocatedict();
 	init_dictionary(leds, 128);
@@ -231,7 +231,5 @@ void main() {
 	writefile("hwregtrace.txt", hwregtrace);
 	writefile("leds.txt", leds);
 	writefile("display7seg.txt", display);
-
-
 
 }
