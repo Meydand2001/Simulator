@@ -1,6 +1,9 @@
 #ifndef DICTIONARY_H
 #define DICTIONARY_H
 
+
+#include "Dictionary.h"
+
 typedef struct {
 	int row_number;
 	char line[200];
