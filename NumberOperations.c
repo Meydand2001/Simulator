@@ -5,91 +5,120 @@
 #include <string.h>
 #include "Number_operations.h"
 
-
 // all number operation which are used are located here
 
-int hex2digit(char hex) {// checked.
+/*******************
+Function: hex2digit
+Input: char hex
+Operation: Converts char hex into int (unsigned)
+*******************/
+int hex2digit(char hex) {
 	int dig = 0;
-	if ('0' <= hex && hex <= '9')
-		dig += hex - '0';
-	else if ('A' <= hex && hex <= 'F')
+	if ('0' <= hex && hex <= '9') //case where hex is a digit.
+		dig += hex - '0'; //
+	else if ('A' <= hex && hex <= 'F') //case where hex is a letter.
 		dig += hex - 'A' + 10;
 	return dig;
 }
 
-int hex2num(char* hex) { // checked get a hex string and returns an unsigned int.
+/*******************
+Function: hex2num
+Input: char* hex
+Operation: Converts char* hex into int (unsigned)
+*******************/
+int hex2num(char* hex) {
 	int l = strlen(hex);
-	//printf("%d\n",l);
 	int num = 0;
-	_strrev(hex);
-	//printf("%s\n", hex);
+	_strrev(hex);  //reverse hex
 	for (int i = 0; i < l; i++) //run backwards and sum over the digits with corresponding powers.
 	{
-		//printf("%d\n", num);
 		num += Pow(16, i) * hex2digit(hex[i]);
 	}
 	return num;
 }
 
-
+/*******************
+Function: signedbin2num
+Input: char* bin
+Operation: Converts char* bin into int (signed)
+*******************/
 int signedbin2num(char* bin) { // checked get a hex string and returns an unsigned int.
 	int l = strlen(bin);
-	//printf("%d\n",l);
 	int num = 0;
-	_strrev(bin);
-	//printf("%s\n", hex);
-	for (int i = 0; i < l-1; i++) //run backwards and sum over the digits with corresponding powers.
+	_strrev(bin);  //reverse bin
+	for (int i = 0; i < l - 1; i++) //run backwards and sum over the digits with corresponding powers.
 	{
-		//printf("%d\n", num);
 		if (bin[i] == '1')
 			num += Pow(2, i);
 	}
-	if (bin[l - 1] == '1')
+
+	if (bin[l - 1] == '1') //if MSB=1 (LSB of reversed bin), deduct 2^(length of bin-1).
 		num -= Pow(2, l - 1);
 
 	return num;
 }
 
-
+/*******************
+Function: signedhex2num
+Input: char* hex, int length
+Operation: Converts char* hex into int (signed, using 'length' bits)
+*******************/
 int signedhex2num(char* hex, int length) {
 	char bin[48] = "";
-	hex2bin(hex, bin, length);
-	int n = signedbin2num(bin);
+	hex2bin(hex, bin, length); //bin=hex converted to bin
+	int n = signedbin2num(bin); //n=bin converted to int (signed)
 	return n;
 }
 
-void complete(char* bin, int l, int pos) {// completes a binary number to certain bit length
-	int n = l - strlen(bin);              //  with zeros or zeros and one at the start
+/*******************
+Function: complete
+Input: char* bin, int l, int pos
+Operation: Completes a binary string 'bin' to bit length l
+with zeros or zeros and one at the start, depending on pos.
+*******************/
+void complete(char* bin, int l, int pos) {
+	int n = l - strlen(bin);
 	char ln[50] = "";
-	if (pos == 1) {
+	if (pos == 1) { //complete with zeros
 		for (int i = 0; i < n; i++) {
 			strcat(ln, "0");
 		}
 		strcat(ln, bin);
-		strcpy(bin, ln);
+		strcpy(bin, ln); //bin = ln;
 	}
-	else {
+	else { //complete with one and then zeros,
 		strcat(ln, "1");
 		for (int i = 1; i < n; i++) {
 			strcat(ln, "0");
 		}
 		strcat(ln, bin);
-		strcpy(bin, ln);
+		strcpy(bin, ln); //bin = ln;
 	}
 }
 
-
-void pad0(char* num,int desiredLength) {
+/*******************
+Function: pad0
+Input: char* num, int l, int desiredLength
+Operation: pads a string with zeros at the start,
+to a length of 'desiredLength'
+*******************/
+void pad0(char* num, int desiredLength) {
 	int l = strlen(num);
 	int numOfZeros = desiredLength - l;
-	num = _strrev(num);
-	for (int i = 0; i < numOfZeros; i++) {
+	num = _strrev(num); //reverse num
+	for (int i = 0; i < numOfZeros; i++) { //add the zeros
 		strcat(num, "0");
 	}
-	num = _strrev(num);
+	num = _strrev(num); //reverse num back
 }
 
-void paddednum2hex(int num,char* hex, int desiredLength) {
+/*******************
+Function: paddednum2hex
+Input: int num, char* hex, int desiredLength
+Operation: converts a number to hex (signed),
+pads with zeros to 'desiredLength'.
+*******************/
+void paddednum2hex(int num, char* hex, int desiredLength) {
 	_itoa(num, hex, 16);
 	pad0(hex, desiredLength);
 	int l = strlen(hex);
@@ -98,8 +127,12 @@ void paddednum2hex(int num,char* hex, int desiredLength) {
 	}
 }
 
-
-void hex2bin(char num[], char* bin, int l) { // make sure bin initialized. works 
+/*******************
+Function: hex2bin
+Input: char num[], char* bin, int l
+Operation: Converts num (in hex) into binary string bin, using l bits. 
+*******************/
+void hex2bin(char num[], char* bin, int l) { // make sure bin initialized to "".
 	int i = 0;
 	while (num[i] != '\0') {
 		if (num[i] == '0') {
@@ -152,15 +185,18 @@ void hex2bin(char num[], char* bin, int l) { // make sure bin initialized. works
 		}
 		i++;
 	}
-	//printf("%s\n",bin);
-	complete(bin, l, 1);
+	complete(bin, l, 1); //completes bin to l bits.
 }
 
-void signednum2bin(int number, char* bin, int l) {//needs a slightly better solution.
+/*******************
+Function: signednum2bin
+Input: int number, char* bin, int l
+Operation: Converts number to binary string bin (signed).
+*******************/
+void signednum2bin(int number, char* bin, int l) {
 	int pos = 1;
 	if (number < 0) {
-		number = number + Pow(2,l-1);
-		printf("%d\n", number);
+		number = number + Pow(2, l - 1);
 		pos = 0;
 	}
 	int count = 0;
@@ -178,28 +214,30 @@ void signednum2bin(int number, char* bin, int l) {//needs a slightly better solu
 		number /= 2;
 	}
 
-	_strrev(st);
-	strcat(bin, st);
-	//printf("%s\n", bin);
-	complete(bin, l, pos);
-	//printf("%s\n", bin);
+	_strrev(st); //reverse st
+	strcat(bin, st); //ad st to bin
+	complete(bin, l, pos); //complete to l bits.
 }
 
-int Pow(int base, int power) {//check
+/*******************
+Function: Pow
+Input: int base, int power
+Operation: Returns base^power.
+*******************/
+int Pow(int base, int power) {
 	int result = 1;
-	for (int i = 0; i < power; i++) {
+	for (int i = 0; i < power; i++) { //multiply base by its self 'power' times.
 		result *= base;
 	}
 	return result;
 }
 
-void signeddec2bin(char num[], char* bin, int l) {//needs a slightly better solution. // v = 8 or 12 checked.
-	int number = atoi(num);
-	signednum2bin(number, bin, l);
-}
-
-
-void bin2hex(char bin[], char* hex, int l) { // v = 8 or 12 checked
+/*******************
+Function: bin2hex
+Input: char bin[], char* hex, int l
+Operation: convert binary string to hex string.
+*******************/
+void bin2hex(char bin[], char* hex, int l) {
 	char temp[20] = "";
 	char digit[5] = "0000";
 	for (int i = 0; i < l; i++) {
@@ -258,10 +296,13 @@ void bin2hex(char bin[], char* hex, int l) { // v = 8 or 12 checked
 	strcpy(hex, temp);
 }
 
-
-void num2hex(int number, char* hex, int l) {// checked
-	char bin[48]="";
-	signednum2bin(number, bin,l);
-	//printf("%s", bin);
+/*******************
+Function: num2hex
+Input: int number, char* hex, int l
+Operation: convert number to hex string (signed).
+*******************/
+void num2hex(int number, char* hex, int l) {
+	char bin[48] = "";
+	signednum2bin(number, bin, l);
 	bin2hex(bin, hex, l);
 }
