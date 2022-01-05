@@ -4,29 +4,20 @@
 #include <stdlib.h>
 #include <string.h>
 #include "Dictionary.h"
-//#include "Hardware.h"
 #include "Processor.h"
 #include "Number_operations.h"
 
 
-
-
-void mainjh() {
-	char bin[20]="";
-	char hex[20] = "";
-	int n = 37;
-	num2hex(n, hex, 12);
-	printf("%s\n", hex);
-	
-}
-
-
-void readfile(char* filename, Dictionary* data) {//works
+/*******************
+Function: readfile
+Input: char* filename, Dictionary* data
+Operation: converts 'filename' into a Dictionary
+*******************/
+void readfile(char* filename, Dictionary* data) {
 	FILE* filepointer;
 	filepointer = fopen(filename, "r");
 	char line[50];
 	int i = 0;
-	printf("%s\n", filename);
 	while (!feof(filepointer)) {
 		fgets(line, 50, filepointer);
 		if (strlen(line) == 13);
@@ -61,7 +52,7 @@ void writefile(char* filename, Dictionary* data) {//works
 void writeyuvfile(char* filename, Dictionary* monitorout) {
 	FILE* filepointer;
 	filepointer = fopen(filename, "wb");
-	char line[6]="";
+	char line[6] = "";
 	//char binline[20]="";
 	Element* list = monitorout->list;
 	for (int i = 0; i < monitorout->number_of_elements; i++) {
@@ -71,7 +62,7 @@ void writeyuvfile(char* filename, Dictionary* monitorout) {
 		int pixel = hex2num(line);
 		char pixelbyte = (char)(pixel);
 		//strcat(binline, "\n");
-		fwrite(&pixelbyte,1,1,filepointer);
+		fwrite(&pixelbyte, 1, 1, filepointer);
 		//fprintf(filepointer, binline);
 		//strcpy(binline, "");
 	}
@@ -96,7 +87,7 @@ void regout_handler(Processor* SIMP, Dictionary* regout) {
 		Element* e = allocate();
 		//num2hex(SIMP->Registers[i + 3], line, 8);
 		//num to hex form SIMP->registers[i+3] to line
-		paddednum2hex(SIMP->Registers[i+3], line, 8);
+		paddednum2hex(SIMP->Registers[i + 3], line, 8);
 		init_element(e, i, line);
 		add_element(regout, e);
 	}
@@ -127,7 +118,7 @@ void monitorout_handler(Monitor* monitor, Dictionary* monitorout) {
 }
 
 
-void diskout_handler(Harddisk* hard_disk, Dictionary* diskout) {
+void diskout_handler(HardDisk* hard_disk, Dictionary* diskout) {
 	char line[50];
 	for (int i = 0; i < 16384; i++) {
 		Element* e = allocate();
@@ -139,24 +130,6 @@ void diskout_handler(Harddisk* hard_disk, Dictionary* diskout) {
 	}
 }
 
-//void fillimemin(Dictionary* imemin) {// maybe add \n to the last.
-//	char line[50] = "000000000000\n";
-//	for (int i = imemin->number_of_elements; i < imemin->max; i++) {
-//		Element* row = allocate();
-//		init_element(row, i, line);
-//		add_element(imemin, row);
-//		i++;
-//	}
-//}
-
-
-void mainlo() {
-	char hex[30] = "0FFD";
-	int n = signedhex2num(hex, 16);
-	printf("%d", n);
-	
-
-}
 
 void main() {
 	Dictionary* imemin = allocatedict();
@@ -169,17 +142,15 @@ void main() {
 	init_dictionary(irq2in, 64);
 	// here we extract the data from the files.
 	readfile("imemin.txt", imemin);
-	//fillimemin(imemin);
 	readfile("dmemin.txt", dmemin);
 	readfile("diskin.txt", diskin);
 	readfile("irq2in.txt", irq2in);
 
-	Processor* SIMP = allocated_pro();
+	Processor* SIMP = allocate_pro();
 	init_Processor(SIMP, imemin, irq2in);// the dictionaries are in.
-	Memory* memory = allocated_mem();
+	Memory* memory = allocate_mem();
 	init_memory(memory, dmemin);
-	//printf("%d\n", memory->Memory[63]);
-	Harddisk* hard_disk = allocatedisk();
+	HardDisk* hard_disk = allocatedisk();
 	init_hard_disk(hard_disk, diskin);
 	Monitor* monitor = allocatemonitor();
 	init_monitor(monitor);
@@ -226,7 +197,7 @@ void main() {
 	diskout_handler(hard_disk, diskout);
 	writefile("diskout.txt", diskout);
 
-	
+
 	writefile("trace.txt", trace);
 	writefile("hwregtrace.txt", hwregtrace);
 	writefile("leds.txt", leds);
